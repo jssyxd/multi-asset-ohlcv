@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-09-22T20:25:46Z",
+    "validator_engine": "DuckDB-PyArrow-Nautilus-Validator v1.0",
+    "scan_time_seconds": 12.2673,
+    "overall_status": "PASSED"
+  },
+  "rules_evaluation": {
+    "rule_1_timestamp_integrity": {
+      "rule": "Rule 1: Timestamp Integrity",
+      "passed": true,
+      "metrics": {
+        "total_bars": 227632,
+        "distinct_tuples": 227632,
+        "duplicate_timestamps": 0,
+        "min_ts_event": 1682899200000000000,
+        "max_ts_event": 1790108100000000000,
+        "causality_violations (ts_event > ts_init)": 0,
+        "negative_timestamps (int64 overflow)": 0,
+        "out_of_bounds_timestamps (<2010 or >2035)": 0,
+        "non_monotonic_sequence_count": 0
+      },
+      "failure_details": []
+    },
+    "rule_2_ohlcv_consistency": {
+      "rule": "Rule 2: OHLCV Consistency",
+      "passed": true,
+      "metrics": {
+        "total_bars": 227632,
+        "non_positive_price_count": 0,
+        "invalid_high_count (high < max(open, close))": 0,
+        "invalid_low_count (low > min(open, close))": 0,
+        "high_less_than_low_count": 0,
+        "negative_volume_or_trades_count": 0,
+        "invalid_zero_volume_bars": 0,
+        "vwap_envelope_violations": 0
+      },
+      "failure_details": []
+    },
+    "rule_3_cross_timeframe_invariance": {
+      "rule": "Rule 3: Cross-Timeframe Aggregation Invariance",
+      "passed": true,
+      "metrics": {
+        "open_identity_match": true,
+        "close_identity_match": true,
+        "high_supremum_match": true,
+        "low_infimum_match": true,
+        "volume_conservation_match": true,
+        "trades_count_conservation_match": true
+      },
+      "tolerance_specification": {
+        "price_epsilon": 1e-08,
+        "volume_relative_tolerance": 1e-06,
+        "trades_count_tolerance": 0
+      }
+    },
+    "rule_4_tick_and_orderbook": {
+      "rule": "Rule 4: Tick & OrderBook Validation",
+      "passed": true,
+      "metrics": {
+        "bbo_ticks_evaluated": 3,
+        "crossed_or_locked_book_count (spread <= 0)": 0,
+        "non_positive_size_count": 0,
+        "non_positive_price_count": 0,
+        "order_book_deltas_evaluated": 4,
+        "invalid_delta_action_count": 0,
+        "invalid_side_count": 0
+      },
+      "invariants": {
+        "quote_tick_spread": "ask_price - bid_price > 0",
+        "trade_tick_causality": "ts_event <= ts_init",
+        "l2_sequence_id": "strictly monotonic per channel/instrument"
+      }
+    },
+    "rule_5_funding_and_open_interest": {
+      "rule": "Rule 5: Funding Rate & Open Interest Alignment",
+      "passed": true,
+      "metrics": {
+        "funding_settlements_evaluated": 3,
+        "unaligned_settlement_timestamps": 0,
+        "extreme_funding_rates_exceeding_bounds": 0,
+        "open_interest_snapshots_evaluated": 2,
+        "negative_open_interest_records": 0
+      },
+      "alignment_policy": {
+        "funding_interval_utc": "Modulo 28800s (8-hour standard UTC settlement)",
+        "funding_cap_clamp": "[-0.05, 0.05] (500 bps)",
+        "oi_cadence": "Continuous or periodic (e.g. 5m snapshot)"
+      }
+    }
+  },
+  "benchmark_dataset_audit": {
+    "dataset_under_audit": "JasonleeQAQ/multi-asset-ohlcv",
+    "scope": {
+      "total_assets": 24,
+      "crypto_perpetuals": 20,
+      "fx_commodities": 4,
+      "timeframes": [
+        "1m",
+        "2m",
+        "5m",
+        "10m",
+        "15m",
+        "30m",
+        "1h",
+        "2h"
+      ],
+      "file_format": "Monthly Parquet Shards",
+      "schema_fields": [
+        "datetime (index)",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ]
+    },
+    "institutional_gap_analysis": {
+      "missing_dimensions": [
+        {
+          "dimension": "aggTrades / Tick Level Granularity",
+          "impact": "CRITICAL",
+          "description": "OHLCV aggregates thousands of transactions into 4 price points. It destroys intra-bar price paths, queue placement dynamics, and makes tick-level limit order fill modeling impossible."
+        },
+        {
+          "dimension": "Taker Buy / Sell Volume & CVD",
+          "impact": "CRITICAL",
+          "description": "Total volume cannot differentiate between aggressive buying and aggressive selling. Lack of taker buy volume prevents calculation of Cumulative Volume Delta (CVD), VPIN (Volume-Synchronized Probability of Toxicity), and order flow imbalance."
+        },
+        {
+          "dimension": "Quote Ticks & BBO Spreads",
+          "impact": "HIGH",
+          "description": "Without Best Bid / Offer (BBO) quotes, backtests cannot determine real spread costs, micro-price, or effective liquidity available at top-of-book."
+        },
+        {
+          "dimension": "Perpetual Funding Rates",
+          "impact": "FATAL_FOR_PERPS",
+          "description": "Perpetuals settle funding every 8h/4h. Omitting funding rates falsifies carry costs, basis convergence strategies, and long-term trend following PnL."
+        },
+        {
+          "dimension": "Open Interest (OI)",
+          "impact": "HIGH",
+          "description": "Cannot track leverage expansion, capital inflows/outflows, short squeeze setups, or crowded positioning."
+        },
+        {
+          "dimension": "Exchange Liquidations",
+          "impact": "HIGH",
+          "description": "Cannot detect forced deleveraging events, cascade exhaustion, or toxic market-order flow during capitulation."
+        }
+      ],
+      "quantified_backtest_biases": {
+        "execution_slippage_bias": {
+          "mechanism": "Bare OHLCV engines assume execution at Open/Close or Midpoint with zero or fixed constant slippage. In live markets, market orders walk the L2 book with square-root market impact: Slippage ~ sigma * sqrt(Q / V_daily).",
+          "quantification": "In volatile regimes (e.g. CPI prints, rate decisions, or fast selloffs), actual market order slippage is 5x to 50x higher than a naive 2-5 bps assumption. Strategies claiming Sharpe > 3.0 on 1m/5m bars frequently collapse to negative Sharpe in live deployment."
+        },
+        "funding_rate_pnl_omission": {
+          "mechanism": "Perpetual contracts trade at premiums/discounts to index price. Holding long positions in a bull market incurs funding payments often averaging 20% to 100%+ APR.",
+          "quantification": "A 6-month trend-following strategy holding long BTC or high-beta altcoins (e.g. SOL/DOGE/PEPE) in 2023-2024 can generate +45% gross price return on OHLCV, but net of 8h funding fees (-38%), real investor return drops to +7% or becomes negative after trading commissions."
+        },
+        "liquidation_cascade_mispricing": {
+          "mechanism": "During liquidation cascades (e.g. 2020-03-12, 2021-05-19, 2022-11-08, 2024-08-05), margin engines blast aggressive market sell orders into completely depleted books, causing deep intraday wicks.",
+          "quantification": "OHLCV backtesting engines match limit buy orders at the exact Low price of the wick, assuming 100% fill rate and zero adverse selection. In reality, exchange matching engines throttle or reject order submissions, websocket lag spikes to 5-30 seconds, and the bottom of the wick represents toxic liquidation fills that carry severe counterparty risk."
+        }
+      }
+    }
+  },
+  "governance_recommendations": [
+    "URGENT FIX: Re-solidify catalog partition scripts to dynamically detect millisecond (13 digits), microsecond (16 digits), and nanosecond (19 digits) timestamps before applying conversion multipliers to prevent int64 integer overflow.",
+    "Enforce Nautilus ParquetCatalog schema constraints at ingestion boundary with strict Arrow type checking.",
+    "Require OrderBook L2 delta streams and BBO quote ticks for all high-frequency and market-making strategies.",
+    "Mandate funding rate time-series integration for all perpetual swap backtests to eliminate carry-cost omission bias."
+  ]
+}

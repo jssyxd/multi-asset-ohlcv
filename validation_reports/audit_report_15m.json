@@ -1,0 +1,21 @@
+{
+  "status": "PASSED",
+  "dataset": "BTCUSDT-PERP.BINANCE",
+  "timeframe": "15m",
+  "total_bars_catalog": 105216,
+  "total_bars_fragment": 105216,
+  "matched_bars": 105216,
+  "precision_metrics": {
+    "max_open_diff": 0.0,
+    "max_close_diff": 0.0,
+    "max_high_diff": 0.0,
+    "max_low_diff": 0.0,
+    "max_volume_diff": 0.0
+  },
+  "governance": {
+    "gaps_count": 0,
+    "schema_compliant": true,
+    "compression": "zstd",
+    "format": "Parquet Catalog (Nautilus Native)"
+  }
+}
