@@ -128,6 +128,21 @@ nautilus-crypto-datacatalog/
 
 ## 5. 快速上手指南 (Quick Start)
 
+### 🚀 极速体验：一键下载预构建的高质量回测数据集 (GitHub Releases)
+无需耗时下载数 GB 原始数据，直接从 GitHub Release 获取经过 100% 审计清洗的 Nautilus Parquet Catalog 数据包：
+
+| 数据集压缩包 | 覆盖标的与周期 | 数据行数 / 特性 | 直接下载链接 |
+|---|---|---|---|
+| **`NautilusTrader_Crypto_Catalog_2024_Q1_Bundle.zip`** | BTC / ETH / SOL (2024 Q1) | **393,120 根 1m K线**，含 Taker 交易量与主动买卖量 | [⬇️ 立即下载 (21.4 MB)](https://github.com/jssyxd/nautilus-crypto-datacatalog/releases/download/v1.0.0/NautilusTrader_Crypto_Catalog_2024_Q1_Bundle.zip) |
+| **`BTCUSDT_2024_Q1_1m_nautilus_parquet.zip`** | BTCUSDT 永续 (2024 Q1) | **131,040 根 1m K线**，零缺口，含 CVD 特征 | [⬇️ 下载 BTC 包 (7.4 MB)](https://github.com/jssyxd/nautilus-crypto-datacatalog/releases/download/v1.0.0/BTCUSDT_2024_Q1_1m_nautilus_parquet.zip) |
+| **`ETHUSDT_2024_Q1_1m_nautilus_parquet.zip`** | ETHUSDT 永续 (2024 Q1) | **131,040 根 1m K线**，零缺口 | [⬇️ 下载 ETH 包 (7.7 MB)](https://github.com/jssyxd/nautilus-crypto-datacatalog/releases/download/v1.0.0/ETHUSDT_2024_Q1_1m_nautilus_parquet.zip) |
+| **`SOLUSDT_2024_Q1_1m_nautilus_parquet.zip`** | SOLUSDT 永续 (2024 Q1) | **131,040 根 1m K线**，零缺口 | [⬇️ 下载 SOL 包 (6.3 MB)](https://github.com/jssyxd/nautilus-crypto-datacatalog/releases/download/v1.0.0/SOLUSDT_2024_Q1_1m_nautilus_parquet.zip) |
+
+你也可以使用内置脚本一键下载并解压到 `./catalog`：
+```bash
+python scripts/download_release_data.py
+```
+
 ### 环境安装
 ```bash
 git clone https://github.com/jssyxd/nautilus-crypto-datacatalog.git
